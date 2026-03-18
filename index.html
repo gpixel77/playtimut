@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Timut Play</title>
+    <style>
+      :root {
+        --machine-pink: #ff80ab;
+        --machine-dark: #f06292;
+        --bg-soft: #fce4ec;
+        --claw-color: #555;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+      body {
+        background-color: var(--bg-soft);
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        touch-action: manipulation;
+      }
+
+      /* --- SECTION 1: VIDEO --- */
+      #video-section {
+        position: fixed;
+        inset: 0;
+        background: black;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 1.5s ease;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #start-overlay {
+        position: absolute;
+        color: white;
+        cursor: pointer;
+        z-index: 1001;
+      }
+      #start-overlay p {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 15px 25px;
+        border-radius: 30px;
+        border: 1px solid white;
+      }
+
+      /* --- SECTION 2: CLAW MACHINE --- */
+      #claw-section {
+        height: 100vh;
+        width: 100vw;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 1.5s ease;
+        background: linear-gradient(to bottom, #fce4ec, #f8bbd0);
+      }
+
+      .machine-body {
+        width: 300px;
+        height: 480px;
+        background: var(--machine-pink);
+        border: 6px solid var(--machine-dark);
+        border-radius: 20px;
+        position: relative;
+        box-shadow:
+          0 10px 0 #ad1457,
+          0 20px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .play-area {
+        width: 90%;
+        height: 60%;
+        background: rgba(255, 255, 255, 0.2);
+        margin: 15px auto;
+        border-radius: 10px;
+        border: 4px solid #ad1457;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #claw-arm {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 4px;
+        height: 30px;
+        background: var(--claw-color);
+        transform: translateX(-50%);
+        transition:
+          left 0.1s linear,
+          height 0.8s ease-in-out;
+        z-index: 10;
+      }
+      #claw-head {
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        width: 30px;
+        height: 20px;
+        background: var(--claw-color);
+        border-radius: 5px 5px 15px 15px;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: space-between;
+        padding: 0 2px;
+      }
+      .claw-finger {
+        width: 6px;
+        height: 15px;
+        background: var(--claw-color);
+        border-radius: 3px;
+        transition: transform 0.3s;
+      }
+
+      .items-container {
+        position: absolute;
+        bottom: 10px;
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+      }
+      .gift {
+        font-size: 32px;
+        transition: opacity 0.3s;
+        position: relative;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+      }
+
+      .control-panel {
+        width: 90%;
+        height: 25%;
+        background: rgba(0, 0, 0, 0.1);
+        margin: 0 auto;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+      .joystick-area {
+        display: flex;
+        gap: 15px;
+      }
+      .control-btn {
+        width: 55px;
+        height: 55px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 0 #ccc;
+        cursor: pointer;
+        font-size: 22px;
+      }
+      .control-btn:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 #ccc;
+      }
+      .take-btn {
+        width: 75px;
+        height: 75px;
+        background: #ff4081;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 4px solid #ad1457;
+        font-weight: bold;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+
+      /* --- PHOTO MODAL --- */
+      #photo-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 2000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+      .polaroid {
+        width: 280px;
+        background: white;
+        padding: 15px 15px 50px 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        transform: scale(0);
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .polaroid img {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <audio id="bg-music" loop>
+      <source src="sound.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="sfx-move">
+      <source
+        src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"
+        type="audio/mpeg"
+      />
+    </audio>
+    <audio id="sfx-grab">
+      <source
+        src="https://assets.mixkit.co/active_storage/sfx/600/600-preview.mp3"
+        type="audio/mpeg"
+      />
+    </audio>
+    <audio id="sfx-success">
+      <source
+        src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
+        type="audio/mpeg"
+      />
+    </audio>
+
+    <section id="video-section">
+      <video id="intro-video" muted playsinline>
+        <source src="game.mp4" type="video/mp4" />
+      </video>
+      <div id="start-overlay" onclick="startApp()">
+        <p>Klik untuk Mulai ✨</p>
+      </div>
+    </section>
+
+    <section id="claw-section">
+      <h2
+        style="color: #ad1457; margin-bottom: 10px; text-shadow: 1px 1px white"
+      >
+        Flower Claw Machine 🌸
+      </h2>
+      <div class="machine-body">
+        <div class="play-area" id="play-area">
+          <div id="claw-arm">
+            <div id="claw-head">
+              <div class="claw-finger" id="f-left"></div>
+              <div class="claw-finger" id="f-right"></div>
+            </div>
+          </div>
+          <div class="items-container">
+            <div class="gift" id="g0">🌹</div>
+            <div class="gift" id="g1">🌸</div>
+            <div class="gift" id="g2">🌻</div>
+            <div class="gift" id="g3">🌷</div>
+            <div class="gift" id="g4">🪻</div>
+          </div>
+        </div>
+
+        <div class="control-panel">
+          <div class="joystick-area">
+            <div class="control-btn" onclick="moveClaw(-20)">◀️</div>
+            <div class="control-btn" onclick="moveClaw(20)">▶️</div>
+          </div>
+          <div class="take-btn" onclick="takeGift()">TAKE</div>
+        </div>
+      </div>
+      <p
+        style="
+          margin-top: 15px;
+          color: #ad1457;
+          font-size: 14px;
+          font-weight: bold;
+        "
+      >
+        Ambil bunga kesukaanmu! ✨
+      </p>
+    </section>
+
+    <div id="photo-modal" onclick="closePhoto()">
+      <div class="polaroid" id="polaroid-frame">
+        <img src="1.jpeg" id="target-img" />
+        <p
+          style="
+            text-align: center;
+            margin-top: 15px;
+            font-family: &quot;Courier New&quot;;
+            font-weight: bold;
+            color: #ad1457;
+          "
+        >
+          You got a flower & memory! ❤️
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById("intro-video");
+      const videoSection = document.getElementById("video-section");
+      const clawSection = document.getElementById("claw-section");
+      const music = document.getElementById("bg-music");
+
+      const sfxMove = document.getElementById("sfx-move");
+      const sfxGrab = document.getElementById("sfx-grab");
+      const sfxSuccess = document.getElementById("sfx-success");
+
+      const arm = document.getElementById("claw-arm");
+      const fLeft = document.getElementById("f-left");
+      const fRight = document.getElementById("f-right");
+
+      let currentPos = 50;
+      let isMoving = false;
+      const photoList = ["7.jpeg", "10.jpeg", "12.jpeg", "13.jpeg", "15.jpeg"];
+
+      function startApp() {
+        document.getElementById("start-overlay").style.display = "none";
+        video.muted = false;
+        video.play().catch((e) => console.log(e));
+      }
+
+      video.onended = () => {
+        videoSection.style.opacity = "0";
+        music.play().catch((e) => console.log(e));
+        setTimeout(() => {
+          videoSection.style.display = "none";
+          clawSection.style.display = "flex";
+          setTimeout(() => {
+            clawSection.style.opacity = "1";
+          }, 100);
+        }, 1500);
+      };
+
+      function moveClaw(step) {
+        if (isMoving) return;
+
+        // Reset waktu suara agar bisa diputar berulang kali dengan cepat
+        sfxMove.currentTime = 0;
+        sfxMove.play().catch((e) => {});
+
+        currentPos += step;
+        if (currentPos < 10) currentPos = 10;
+        if (currentPos > 90) currentPos = 90;
+        arm.style.left = currentPos + "%";
+      }
+
+      function takeGift() {
+        if (isMoving) return;
+        isMoving = true;
+
+        sfxGrab.currentTime = 0;
+        sfxGrab.play().catch((e) => {});
+
+        arm.style.height = "185px";
+
+        setTimeout(() => {
+          fLeft.style.transform = "rotate(35deg)";
+          fRight.style.transform = "rotate(-35deg)";
+
+          let giftIdx = Math.floor((currentPos - 10) / 18);
+          if (giftIdx < 0) giftIdx = 0;
+          if (giftIdx > 4) giftIdx = 4;
+          const giftEl = document.getElementById("g" + giftIdx);
+
+          setTimeout(() => {
+            arm.style.height = "30px";
+            giftEl.style.transition = "all 0.8s ease-in-out";
+            giftEl.style.transform = "translateY(-155px)";
+            giftEl.style.opacity = "0";
+
+            setTimeout(() => {
+              sfxSuccess.play().catch((e) => {});
+              showPhoto(photoList[giftIdx]);
+
+              fLeft.style.transform = "rotate(0)";
+              fRight.style.transform = "rotate(0)";
+              setTimeout(() => {
+                giftEl.style.transition = "none";
+                giftEl.style.transform = "translateY(0)";
+                giftEl.style.opacity = "1";
+                isMoving = false;
+              }, 1000);
+            }, 800);
+          }, 500);
+        }, 800);
+      }
+
+      function showPhoto(src) {
+        const modal = document.getElementById("photo-modal");
+        const img = document.getElementById("target-img");
+        const frame = document.getElementById("polaroid-frame");
+        img.src = src;
+        modal.style.display = "flex";
+        setTimeout(() => {
+          frame.style.transform = "scale(1)";
+        }, 100);
+      }
+
+      function closePhoto() {
+        const modal = document.getElementById("photo-modal");
+        const frame = document.getElementById("polaroid-frame");
+        frame.style.transform = "scale(0)";
+        setTimeout(() => {
+          modal.style.display = "none";
+        }, 400);
+      }
+    </script>
+  </body>
+</html>
